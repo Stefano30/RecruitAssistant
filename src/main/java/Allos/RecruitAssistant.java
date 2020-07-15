@@ -52,6 +52,7 @@ public class RecruitAssistant {
             System.out.println(responseGeneric.get(i).text());
           }
           if (responseGeneric.get(i).responseType().equals("option")) {
+            System.out.println(responseGeneric.get(i).title());
             for (DialogNodeOutputOptionsElement opt : responseGeneric.get(i).options()) {
               System.out.println(opt.getLabel());
             }
