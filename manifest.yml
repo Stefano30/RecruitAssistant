@@ -1,6 +1,0 @@
-applications:
-- name: Recruit assistant
-  random-route: true
-  path: target/recAssistant-1.0-SNAPSHOT.jar
-  memory: 512M
-  instances: 1
