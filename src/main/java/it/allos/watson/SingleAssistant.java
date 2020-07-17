@@ -3,7 +3,7 @@ package it.allos.watson;
 import com.ibm.cloud.sdk.core.security.IamAuthenticator;
 import com.ibm.watson.assistant.v2.Assistant;
 import com.ibm.watson.assistant.v2.model.CreateSessionOptions;
-import com.ibm.watson.assistant.v2.model.SessionResponse;
+import com.ibm.watson.assistant.v2.model.DeleteSessionOptions;
 
 public class SingleAssistant {
 
@@ -28,11 +28,19 @@ public class SingleAssistant {
     }
 
     public static String getSessionID() {
-        if (sessionID == null && assistantInstance != null) { //TODO: controllo errato. 
-                                                              //cosa succede se assistantInstance == null?
+        if (sessionID == null && assistantInstance != null) { // TODO: controllo errato.
+                                                              // cosa succede se assistantInstance == null?
             CreateSessionOptions createSessionOptions = new CreateSessionOptions.Builder(ASSISTANT_ID).build();
             sessionID = assistantInstance.createSession(createSessionOptions).execute().getResult().getSessionId();
         }
         return sessionID;
+    }
+
+    public static void deleteSession() {
+        if (sessionID != null) {
+            DeleteSessionOptions options = new DeleteSessionOptions.Builder(ASSISTANT_ID, sessionID).build();
+            assistantInstance.deleteSession(options).execute();
+            sessionID = null;
+        }
     }
 }
