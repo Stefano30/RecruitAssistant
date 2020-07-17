@@ -26,7 +26,7 @@ public class RouterRESTApp {
     @Path("/status")
     @Produces(MediaType.TEXT_PLAIN)
     public String get() {
-        return System.currentTimeMillis() + "";
+        return System.currentTimeMillis() + " - OK";
     }
 
     @POST

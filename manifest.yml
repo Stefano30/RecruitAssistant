@@ -1,0 +1,6 @@
+  applications:
+   - name: RecruitAssistant
+     random-route: true
+     path: target/RecruitAssistant.war
+     memory: 256M
+     instances: 1
