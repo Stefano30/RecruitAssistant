@@ -28,7 +28,8 @@ public class SingleAssistant {
     }
 
     public static String getSessionID() {
-        if (sessionID == null && assistantInstance != null) { //TODO: cosa succede se assistantInstance == null?
+        if (sessionID == null && assistantInstance != null) { //TODO: controllo errato. 
+                                                              //cosa succede se assistantInstance == null?
             CreateSessionOptions createSessionOptions = new CreateSessionOptions.Builder(ASSISTANT_ID).build();
             sessionID = assistantInstance.createSession(createSessionOptions).execute().getResult().getSessionId();
         }

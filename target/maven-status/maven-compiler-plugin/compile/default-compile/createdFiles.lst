@@ -1,4 +1,3 @@
-it\allos\RecruitAssistant.class
-it\allos\watson\WatsonAuth.class
+it\allos\watson\SingleAssistant.class
 it\allos\dto\Message.class
 it\allos\rest\RouterRESTApp.class

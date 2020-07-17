@@ -14,7 +14,6 @@ import com.ibm.watson.assistant.v2.model.MessageInput;
 import com.ibm.watson.assistant.v2.model.MessageOptions;
 import com.ibm.watson.assistant.v2.model.MessageResponse;
 import com.ibm.watson.assistant.v2.model.RuntimeResponseGeneric;
-import com.ibm.watson.assistant.v2.model.SessionResponse;
 
 import it.allos.dto.Message;
 import it.allos.watson.SingleAssistant;
@@ -35,10 +34,11 @@ public class RouterRESTApp {
     @Consumes(MediaType.APPLICATION_JSON)
     public Message request(Message request) {
         Assistant service = SingleAssistant.getAssistant();
-        SessionResponse session = SingleAssistant.getSession(service);
-        String sessionId = session.getSessionId();
-        MessageInput input = new MessageInput.Builder().messageType("text").text("").build();
+        String sessionId = SingleAssistant.getSessionID();
+        //invio messaggio
+        MessageInput input = new MessageInput.Builder().messageType("text").text(request.getText()).build();
         MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionId).input(input).build();
+        //risposta
         MessageResponse response = service.message(messageOptions).execute().getResult();
         List<RuntimeResponseGeneric> responseGeneric = response.getOutput().getGeneric();
         return new Message(responseGeneric.get(0).text());
