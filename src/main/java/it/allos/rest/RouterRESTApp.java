@@ -17,11 +17,11 @@ import com.ibm.watson.assistant.v2.model.RuntimeResponseGeneric;
 import com.ibm.watson.assistant.v2.model.SessionResponse;
 
 import it.allos.dto.Message;
-import it.allos.watson.WatsonAuth;
+import it.allos.watson.SingleAssistant;
 
 @Path("/watson/api")
 public class RouterRESTApp {
-	
+
     @GET
     @Path("/status")
     @Produces(MediaType.TEXT_PLAIN)
@@ -34,14 +34,14 @@ public class RouterRESTApp {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Message request(Message request) {
-        Assistant service = WatsonAuth.makeAssistant();
-        SessionResponse session = WatsonAuth.getSession(service);
+        Assistant service = SingleAssistant.getAssistant();
+        SessionResponse session = SingleAssistant.getSession(service);
         String sessionId = session.getSessionId();
         MessageInput input = new MessageInput.Builder().messageType("text").text("").build();
-        MessageOptions messageOptions = new MessageOptions.Builder(WatsonAuth.ASSISTANT_ID, sessionId).input(input).build();
+        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionId).input(input).build();
         MessageResponse response = service.message(messageOptions).execute().getResult();
         List<RuntimeResponseGeneric> responseGeneric = response.getOutput().getGeneric();
         return new Message(responseGeneric.get(0).text());
     }
-    
+
 }
