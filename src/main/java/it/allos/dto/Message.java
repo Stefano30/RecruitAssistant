@@ -1,19 +1,19 @@
 package it.allos.dto;
 
-public class Message {
-    private String text;
+public class Message<T> {
+    private T text;
 
     public Message() {}
 
-    public Message(String text) {
+    public Message(T text) {
         this.text = text;
     }
 
-    public String getText() {
+    public T getText() {
         return text;
     }
 
-    public void setText(String text) {
+    public void setText(T text) {
         this.text = text;
     }
 
