@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
@@ -19,15 +21,17 @@ import com.ibm.watson.assistant.v2.model.RuntimeIntent;
 import com.ibm.watson.assistant.v2.model.RuntimeResponseGeneric;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory; 
+import org.slf4j.LoggerFactory;
 
 import it.allos.dto.Message;
+import it.allos.watson.ConnectionDAO;
 import it.allos.watson.SingleAssistant;
 
 @Path("/watson/api")
 public class RouterRESTApp {
 
     private static final Logger log = LoggerFactory.getLogger(RouterRESTApp.class);
+
     @GET
     @Path("/status")
     @Produces(MediaType.TEXT_PLAIN)
@@ -42,14 +46,15 @@ public class RouterRESTApp {
     public Message<?> request(Message<String> request) {
 
         Assistant service = SingleAssistant.getAssistant();
-        String sessionId = SingleAssistant.getSessionID();
+        String sessionId = ConnectionDAO.getSessionID();
         Message<?> returnMessage = null;
 
-        //invio messaggio
+        // invio messaggio
         MessageInput input = new MessageInput.Builder().messageType("text").text(request.getText()).build();
-        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionId).input(input).build();
+        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionId).input(input)
+                .build();
 
-        //risposta
+        // risposta
         MessageResponse response = service.message(messageOptions).execute().getResult();
         List<RuntimeResponseGeneric> responseGeneric = response.getOutput().getGeneric();
         if (responseGeneric.get(0).responseType().equals("text")) {
@@ -61,7 +66,7 @@ public class RouterRESTApp {
             List<String> param = new ArrayList<String>();
             param.add(responseGeneric.get(0).title());
             for (DialogNodeOutputOptionsElement opt : responseGeneric.get(0).options()) {
-              param.add(opt.getLabel());
+                param.add(opt.getLabel());
             }
             returnMessage = new Message<List<String>>(param);
         }
@@ -69,13 +74,20 @@ public class RouterRESTApp {
         //determino se la conversazione è finita
         List<RuntimeIntent> responseIntents = response.getOutput().getIntents();
         try {
-            log.info("Intent: {}", responseIntents.get(0).intent());
+        log.info("Intent: {}", responseIntents.get(0).intent());
         } catch (Exception e) {
         }
-        if(responseIntents.size() > 0 && responseIntents.get(0).intent().equals("General_Ending")) {
-            log.info("Deleted session {}", sessionId);
-            SingleAssistant.deleteSession();
+        if(responseIntents.size() > 0 &&
+        responseIntents.get(0).intent().equals("General_Ending")) {
+        log.info("Deleted session {}", sessionId);
+        //SingleAssistant.deleteSession();
         }
         return returnMessage;
+    }
+
+    @DELETE
+    @Path("/delete/{sessionID}")
+    public void deleteSession(@PathParam("sessionID") String sessionID) {
+        ConnectionDAO.deleteSession(sessionID);
     }
 }

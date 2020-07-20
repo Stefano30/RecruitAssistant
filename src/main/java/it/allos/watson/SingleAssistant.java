@@ -2,8 +2,6 @@ package it.allos.watson;
 
 import com.ibm.cloud.sdk.core.security.IamAuthenticator;
 import com.ibm.watson.assistant.v2.Assistant;
-import com.ibm.watson.assistant.v2.model.CreateSessionOptions;
-import com.ibm.watson.assistant.v2.model.DeleteSessionOptions;
 
 public class SingleAssistant {
 
@@ -13,7 +11,6 @@ public class SingleAssistant {
     public static final String API_VERSION = "2020-07-17";
 
     private static Assistant assistantInstance = null;
-    private static String sessionID = null;
 
     private SingleAssistant() {
     }
@@ -25,21 +22,5 @@ public class SingleAssistant {
             assistantInstance.setServiceUrl(SERVICE_URL);
         }
         return assistantInstance;
-    }
-
-    public static String getSessionID() {
-        if (sessionID == null) {
-            CreateSessionOptions createSessionOptions = new CreateSessionOptions.Builder(ASSISTANT_ID).build();
-            sessionID = assistantInstance.createSession(createSessionOptions).execute().getResult().getSessionId();
-        }
-        return sessionID;
-    }
-
-    public static void deleteSession() {
-        if (sessionID != null) {
-            DeleteSessionOptions options = new DeleteSessionOptions.Builder(ASSISTANT_ID, sessionID).build();
-            assistantInstance.deleteSession(options).execute();
-            sessionID = null;
-        }
     }
 }
