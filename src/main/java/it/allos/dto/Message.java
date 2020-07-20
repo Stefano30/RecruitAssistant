@@ -1,20 +1,41 @@
 package it.allos.dto;
 
-public class Message<T> {
-    private T text;
+import java.util.ArrayList;
+import java.util.List;
 
-    public Message() {}
+public class Message {
+    private String text;
+    private List<String> options;
 
-    public Message(T text) {
+    public Message() {
+        options = null;
+    }
+
+    public Message(String text) {
+        options = null;
         this.text = text;
     }
 
-    public T getText() {
+    public Message(List<String> options) {
+        this.options = options;
+    }
+
+    public String getText() {
         return text;
     }
 
-    public void setText(T text) {
+    public void setText(String text) {
         this.text = text;
+    }
+
+    public void addOption(String option) {
+        if (options == null)
+            options = new ArrayList<String>();
+        options.add(option);
+    }
+
+    public List<String> getOptions() {
+        return options;
     }
 
 }

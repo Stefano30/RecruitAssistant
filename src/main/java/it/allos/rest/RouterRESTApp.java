@@ -43,11 +43,11 @@ public class RouterRESTApp {
     @Path("/request")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Message<?> request(Message<String> request) {
+    public Message request(Message request) {
 
         Assistant service = SingleAssistant.getAssistant();
         String sessionId = ConnectionDAO.getSessionID();
-        Message<?> returnMessage = null;
+        Message returnMessage = null;
 
         // invio messaggio
         MessageInput input = new MessageInput.Builder().messageType("text").text(request.getText()).build();
@@ -58,7 +58,7 @@ public class RouterRESTApp {
         MessageResponse response = service.message(messageOptions).execute().getResult();
         List<RuntimeResponseGeneric> responseGeneric = response.getOutput().getGeneric();
         if (responseGeneric.get(0).responseType().equals("text")) {
-            returnMessage = new Message<String>(responseGeneric.get(0).text());
+            returnMessage = new Message(responseGeneric.get(0).text());
             log.info("SessionID: {}", sessionId);
         }
 
@@ -68,19 +68,18 @@ public class RouterRESTApp {
             for (DialogNodeOutputOptionsElement opt : responseGeneric.get(0).options()) {
                 param.add(opt.getLabel());
             }
-            returnMessage = new Message<List<String>>(param);
+            returnMessage = new Message(param);
         }
 
-        //determino se la conversazione è finita
+        // determino se la conversazione è finita
         List<RuntimeIntent> responseIntents = response.getOutput().getIntents();
         try {
-        log.info("Intent: {}", responseIntents.get(0).intent());
+            log.info("Intent: {}", responseIntents.get(0).intent());
         } catch (Exception e) {
         }
-        if(responseIntents.size() > 0 &&
-        responseIntents.get(0).intent().equals("General_Ending")) {
-        log.info("Deleted session {}", sessionId);
-        //SingleAssistant.deleteSession();
+        if (responseIntents.size() > 0 && responseIntents.get(0).intent().equals("General_Ending")) {
+            log.info("Deleted session {}", sessionId);
+            ConnectionDAO.deleteSession(sessionId);
         }
         return returnMessage;
     }
