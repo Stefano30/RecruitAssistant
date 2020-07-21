@@ -1,8 +1,13 @@
 package it.allos.rest;
 
 import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 
+import javax.swing.text.Position;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -15,6 +20,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.watson.assistant.v2.Assistant;
 import com.ibm.watson.assistant.v2.model.DialogNodeOutputOptionsElement;
 import com.ibm.watson.assistant.v2.model.MessageInput;
@@ -23,12 +32,15 @@ import com.ibm.watson.assistant.v2.model.MessageResponse;
 import com.ibm.watson.assistant.v2.model.RuntimeIntent;
 import com.ibm.watson.assistant.v2.model.RuntimeResponseGeneric;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.allos.dto.Message;
+import it.allos.dto.Positions;
 import it.allos.watson.ConnectionDAO;
 import it.allos.watson.SingleAssistant;
+import it.allos.dto.Error;
 
 @Path("/watson/api")
 public class RouterRESTApp {
@@ -62,44 +74,49 @@ public class RouterRESTApp {
     @Path("/request")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Message request(Message request) {
+    public Message request(Message request) throws JsonParseException, JsonMappingException, IOException {
 
         Assistant service = SingleAssistant.getAssistant();
-        String sessionID = ConnectionDAO.getSessionID();
         Message returnMessage = new Message();
+        returnMessage.setSessionID(request.getSessionID());
 
         // invio messaggio
         MessageInput input = new MessageInput.Builder().messageType("text").text(request.getText()).build();
-        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionID).input(input)
+        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, request.getSessionID()).input(input)
                 .build();
 
         // risposta
-        MessageResponse response = service.message(messageOptions).execute().getResult();
-        List<RuntimeResponseGeneric> responseGeneric = response.getOutput().getGeneric();
-        if (responseGeneric.get(0).responseType().equals("text")) {
-            returnMessage.setText(responseGeneric.get(0).text());
-            log.info("sessionID: {}", sessionID);
+        // MessageResponse response = service.message(messageOptions).execute().getResult();
+        // List<RuntimeResponseGeneric> responseGeneric = response.getOutput().getGeneric();
+        // if (responseGeneric.get(0).responseType().equals("text")) {
+        //     returnMessage.setText(responseGeneric.get(0).text());
+        //     log.info("sessionID: {}", sessionID);
+        // }
+        // if (responseGeneric.get(0).responseType().equals("option")) {
+        //     List<String> param = new ArrayList<String>();
+        //     param.add(responseGeneric.get(0).title());
+        //     for (DialogNodeOutputOptionsElement opt : responseGeneric.get(0).options()) {
+        //         param.add(opt.getLabel());
+        //     }
+        //     returnMessage.setOptions(param);
+        // }
+        String detectedIntent = service.message(messageOptions).execute().getResult().getOutput().getIntents().get(0).intent();
+        if(detectedIntent.equals("Indicazione_posizioni_aperte")) { // Chiamata a SuccessFactors
+            ObjectMapper mapper = new ObjectMapper();
+            InputStream is = this.getClass().getResourceAsStream(StringUtils.prependIfMissing("posizioni.json", "/"));
+            Positions pos = mapper.readValue(is, Positions.class);
+            returnMessage.setOptions(pos.getPosizioni());
         }
-
-        if (responseGeneric.get(0).responseType().equals("option")) {
-            List<String> param = new ArrayList<String>();
-            param.add(responseGeneric.get(0).title());
-            for (DialogNodeOutputOptionsElement opt : responseGeneric.get(0).options()) {
-                param.add(opt.getLabel());
-            }
-            returnMessage.setOptions(param);
-        }
-
         // determino se la conversazione è finita
-        List<RuntimeIntent> responseIntents = response.getOutput().getIntents();
-        try {
-            log.info("Intent: {}", responseIntents.get(0).intent());
-        } catch (Exception e) {
-        }
-        if (responseIntents.size() > 0 && responseIntents.get(0).intent().equals("General_Ending")) {
-            log.info("Deleted session {}", sessionID);
-            ConnectionDAO.deleteSession(sessionID);
-        }
+        // List<RuntimeIntent> responseIntents = response.getOutput().getIntents();
+        // try {
+        //     log.info("Intent: {}", responseIntents.get(0).intent());
+        // } catch (Exception e) {
+        // }
+        // if (responseIntents.size() > 0 && responseIntents.get(0).intent().equals("General_Ending")) {
+        //     log.info("Deleted session {}", sessionID);
+        //     ConnectionDAO.deleteSession(sessionID);
+        // }
         return returnMessage;
     }
 
