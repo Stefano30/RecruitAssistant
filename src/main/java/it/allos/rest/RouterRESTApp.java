@@ -87,15 +87,24 @@ public class RouterRESTApp {
 
         // risposta
         MessageResponse response = service.message(messageOptions).execute().getResult();
-        returnMessage.setText(response.getOutput().getGeneric().get(0).text());
+        List<RuntimeResponseGeneric> responseGenerics = response.getOutput().getGeneric();
+        log.info(responseGenerics.size() + "");
+
+        if (responseGenerics.size() != 0)
+            returnMessage.setText(response.getOutput().getGeneric().get(0).text());
+
         String detectedIntent = response.getOutput().getIntents().get(0).intent();
-        
         // Sostituire con chiamata ad API SuccessFactors
         if (detectedIntent.equals("Indicazione_posizioni_aperte")) {
             ObjectMapper mapper = new ObjectMapper();
             InputStream is = this.getClass().getResourceAsStream(StringUtils.prependIfMissing("posizioni.json", "/"));
             Positions pos = mapper.readValue(is, Positions.class);
-            returnMessage.setOptions(pos.getPosizioni());
+            if (pos.getPosizioni().size() != 0) {
+                returnMessage.setText("Ecco un elenco di posizioni che ho trovato per te:");
+                returnMessage.setOptions(pos.getPosizioni());
+            }
+            else
+                returnMessage.setText("Al momento non ci sono posizioni aperte disponibili");
         }
         return returnMessage;
     }
