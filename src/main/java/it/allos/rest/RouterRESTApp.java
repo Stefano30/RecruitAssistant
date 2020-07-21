@@ -21,15 +21,12 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.watson.assistant.v2.Assistant;
-import com.ibm.watson.assistant.v2.model.DialogNodeOutputOptionsElement;
 import com.ibm.watson.assistant.v2.model.MessageInput;
 import com.ibm.watson.assistant.v2.model.MessageOptions;
 import com.ibm.watson.assistant.v2.model.MessageResponse;
-import com.ibm.watson.assistant.v2.model.RuntimeIntent;
 import com.ibm.watson.assistant.v2.model.RuntimeResponseGeneric;
 
 import org.apache.commons.lang3.StringUtils;
