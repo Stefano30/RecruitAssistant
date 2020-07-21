@@ -10,7 +10,10 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import com.ibm.watson.assistant.v2.Assistant;
 import com.ibm.watson.assistant.v2.model.DialogNodeOutputOptionsElement;
@@ -39,6 +42,22 @@ public class RouterRESTApp {
         return System.currentTimeMillis() + " - OK";
     }
 
+    @GET
+    @Path("/start")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Message startConversation() {
+        Assistant service = SingleAssistant.getAssistant();
+        String sessionID = ConnectionDAO.getSessionID();
+        MessageInput input = new MessageInput.Builder().messageType("text").text("").build();
+        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionID).input(input)
+                .build();
+        MessageResponse response = service.message(messageOptions).execute().getResult();
+        Message returnMessage = new Message();
+        returnMessage.setText(response.getOutput().getGeneric().get(0).text());
+        returnMessage.setSessionID(sessionID);
+        return returnMessage;
+    }
+
     @POST
     @Path("/request")
     @Produces(MediaType.APPLICATION_JSON)
@@ -46,20 +65,20 @@ public class RouterRESTApp {
     public Message request(Message request) {
 
         Assistant service = SingleAssistant.getAssistant();
-        String sessionId = ConnectionDAO.getSessionID();
-        Message returnMessage = null;
+        String sessionID = ConnectionDAO.getSessionID();
+        Message returnMessage = new Message();
 
         // invio messaggio
         MessageInput input = new MessageInput.Builder().messageType("text").text(request.getText()).build();
-        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionId).input(input)
+        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionID).input(input)
                 .build();
 
         // risposta
         MessageResponse response = service.message(messageOptions).execute().getResult();
         List<RuntimeResponseGeneric> responseGeneric = response.getOutput().getGeneric();
         if (responseGeneric.get(0).responseType().equals("text")) {
-            returnMessage = new Message(responseGeneric.get(0).text());
-            log.info("SessionID: {}", sessionId);
+            returnMessage.setText(responseGeneric.get(0).text());
+            log.info("sessionID: {}", sessionID);
         }
 
         if (responseGeneric.get(0).responseType().equals("option")) {
@@ -68,7 +87,7 @@ public class RouterRESTApp {
             for (DialogNodeOutputOptionsElement opt : responseGeneric.get(0).options()) {
                 param.add(opt.getLabel());
             }
-            returnMessage = new Message(param);
+            returnMessage.setOptions(param);
         }
 
         // determino se la conversazione è finita
@@ -78,15 +97,25 @@ public class RouterRESTApp {
         } catch (Exception e) {
         }
         if (responseIntents.size() > 0 && responseIntents.get(0).intent().equals("General_Ending")) {
-            log.info("Deleted session {}", sessionId);
-            ConnectionDAO.deleteSession(sessionId);
+            log.info("Deleted session {}", sessionID);
+            ConnectionDAO.deleteSession(sessionID);
         }
         return returnMessage;
     }
 
     @DELETE
-    @Path("/delete/{sessionID}")
-    public void deleteSession(@PathParam("sessionID") String sessionID) {
-        ConnectionDAO.deleteSession(sessionID);
+    @Path("/close/{sessionID}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Message deleteSession(@PathParam("sessionID") String sessionID) {
+        try {
+            ConnectionDAO.deleteSession(sessionID);
+            Message returnMessage = new Message();
+            returnMessage.setSessionID(sessionID);
+            returnMessage.setText("OK");
+            return returnMessage;
+        } catch(RuntimeException ex) {
+            log.error("Error deleting session {}", sessionID, ex);
+            throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR).entity(new Error("Ops... qualcosa è andato storto, riprova più tardi.")).build());
+        }
     }
 }

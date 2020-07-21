@@ -1,23 +1,18 @@
 package it.allos.dto;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Message {
     private String text;
     private List<String> options;
+    private String sessionID;
 
-    public Message() {
-        options = null;
+    public String getSessionID() {
+        return sessionID;
     }
 
-    public Message(String text) {
-        options = null;
-        this.text = text;
-    }
-
-    public Message(List<String> options) {
-        this.options = options;
+    public void setSessionID(String sessionID) {
+        this.sessionID = sessionID;
     }
 
     public String getText() {
@@ -28,14 +23,12 @@ public class Message {
         this.text = text;
     }
 
-    public void addOption(String option) {
-        if (options == null)
-            options = new ArrayList<String>();
-        options.add(option);
-    }
-
     public List<String> getOptions() {
         return options;
+    }
+
+    public void setOptions(List<String> options) {
+        this.options = options;
     }
 
 }

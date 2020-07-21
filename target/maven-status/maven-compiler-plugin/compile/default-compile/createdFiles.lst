@@ -1,4 +1,5 @@
 it\allos\watson\ConnectionDAO.class
+it\allos\dto\Error.class
 it\allos\watson\SingleAssistant.class
 it\allos\dto\Message.class
 it\allos\rest\RouterRESTApp.class
