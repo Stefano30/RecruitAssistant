@@ -82,41 +82,21 @@ public class RouterRESTApp {
 
         // invio messaggio
         MessageInput input = new MessageInput.Builder().messageType("text").text(request.getText()).build();
-        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, request.getSessionID()).input(input)
-                .build();
+        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, request.getSessionID())
+                .input(input).build();
 
         // risposta
-        // MessageResponse response = service.message(messageOptions).execute().getResult();
-        // List<RuntimeResponseGeneric> responseGeneric = response.getOutput().getGeneric();
-        // if (responseGeneric.get(0).responseType().equals("text")) {
-        //     returnMessage.setText(responseGeneric.get(0).text());
-        //     log.info("sessionID: {}", sessionID);
-        // }
-        // if (responseGeneric.get(0).responseType().equals("option")) {
-        //     List<String> param = new ArrayList<String>();
-        //     param.add(responseGeneric.get(0).title());
-        //     for (DialogNodeOutputOptionsElement opt : responseGeneric.get(0).options()) {
-        //         param.add(opt.getLabel());
-        //     }
-        //     returnMessage.setOptions(param);
-        // }
-        String detectedIntent = service.message(messageOptions).execute().getResult().getOutput().getIntents().get(0).intent();
-        if(detectedIntent.equals("Indicazione_posizioni_aperte")) { // Chiamata a SuccessFactors
+        MessageResponse response = service.message(messageOptions).execute().getResult();
+        returnMessage.setText(response.getOutput().getGeneric().get(0).text());
+        String detectedIntent = response.getOutput().getIntents().get(0).intent();
+        
+        // Sostituire con chiamata ad API SuccessFactors
+        if (detectedIntent.equals("Indicazione_posizioni_aperte")) {
             ObjectMapper mapper = new ObjectMapper();
             InputStream is = this.getClass().getResourceAsStream(StringUtils.prependIfMissing("posizioni.json", "/"));
             Positions pos = mapper.readValue(is, Positions.class);
             returnMessage.setOptions(pos.getPosizioni());
         }
-        // determino se la conversazione è finita
-        // List<RuntimeIntent> responseIntents = response.getOutput().getIntents();
-        // try {
-        //     log.info("Intent: {}", responseIntents.get(0).intent());
-        // } catch (Exception e) {
-        // }
-        // if (responseIntents.size() > 0 && responseIntents.get(0).intent().equals("General_Ending")) {
-        //     log.info("Deleted session {}", sessionID);
-        //     ConnectionDAO.deleteSession(sessionID);
-        // }
         return returnMessage;
     }
 
@@ -130,9 +110,10 @@ public class RouterRESTApp {
             returnMessage.setSessionID(sessionID);
             returnMessage.setText("OK");
             return returnMessage;
-        } catch(RuntimeException ex) {
+        } catch (RuntimeException ex) {
             log.error("Error deleting session {}", sessionID, ex);
-            throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR).entity(new Error("Ops... qualcosa è andato storto, riprova più tardi.")).build());
+            throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+                    .entity(new Error("Ops... qualcosa è andato storto, riprova più tardi.")).build());
         }
     }
 }
