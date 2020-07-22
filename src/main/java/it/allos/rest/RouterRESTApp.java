@@ -51,6 +51,7 @@ public class RouterRESTApp {
     public Message startConversation() {
         Assistant service = SingleAssistant.getAssistant();
         try {
+            // invio messaggio vuoto
             String sessionID = ConnectionDAO.getSessionID();
             MessageInput input = new MessageInput.Builder().messageType("text").text("").build();
             MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionID)
