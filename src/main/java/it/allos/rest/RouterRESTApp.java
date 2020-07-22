@@ -1,13 +1,8 @@
 package it.allos.rest;
 
 import java.util.List;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-
-import javax.swing.text.Position;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -41,7 +36,6 @@ import it.allos.dto.Error;
 
 @Path("/watson/api")
 public class RouterRESTApp {
-
     private static final Logger log = LoggerFactory.getLogger(RouterRESTApp.class);
 
     @GET
@@ -56,23 +50,29 @@ public class RouterRESTApp {
     @Produces(MediaType.APPLICATION_JSON)
     public Message startConversation() {
         Assistant service = SingleAssistant.getAssistant();
-        String sessionID = ConnectionDAO.getSessionID();
-        MessageInput input = new MessageInput.Builder().messageType("text").text("").build();
-        MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionID).input(input)
-                .build();
-        MessageResponse response = service.message(messageOptions).execute().getResult();
-        Message returnMessage = new Message();
-        returnMessage.setText(response.getOutput().getGeneric().get(0).text());
-        returnMessage.setSessionID(sessionID);
-        return returnMessage;
+        try {
+            String sessionID = ConnectionDAO.getSessionID();
+            MessageInput input = new MessageInput.Builder().messageType("text").text("").build();
+            MessageOptions messageOptions = new MessageOptions.Builder(SingleAssistant.ASSISTANT_ID, sessionID)
+                    .input(input).build();
+            MessageResponse response = service.message(messageOptions).execute().getResult();
+            Message returnMessage = new Message();
+            returnMessage.setText(response.getOutput().getGeneric().get(0).text());
+            returnMessage.setSessionID(sessionID);
+            return returnMessage;
+        } catch (RuntimeException ex) {
+            log.error("Error creating session", ex);
+            throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+                    .entity(new Error("Ops... qualcosa è andato storto, riprova più tardi.")).build());
+        }
     }
 
     @POST
     @Path("/request")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    // TODO: gestire eccezioni del metodo
     public Message request(Message request) throws JsonParseException, JsonMappingException, IOException {
-
         Assistant service = SingleAssistant.getAssistant();
         Message returnMessage = new Message();
         returnMessage.setSessionID(request.getSessionID());
@@ -85,13 +85,13 @@ public class RouterRESTApp {
         // risposta
         MessageResponse response = service.message(messageOptions).execute().getResult();
         List<RuntimeResponseGeneric> responseGenerics = response.getOutput().getGeneric();
-        log.info(responseGenerics.size() + "");
 
         if (responseGenerics.size() != 0)
             returnMessage.setText(response.getOutput().getGeneric().get(0).text());
 
         String detectedIntent = response.getOutput().getIntents().get(0).intent();
-        // Sostituire con chiamata ad API SuccessFactors
+
+        // TODO: sostituire con chiamata ad API SuccessFactors
         if (detectedIntent.equals("Indicazione_posizioni_aperte")) {
             ObjectMapper mapper = new ObjectMapper();
             InputStream is = this.getClass().getResourceAsStream(StringUtils.prependIfMissing("posizioni.json", "/"));
@@ -99,8 +99,7 @@ public class RouterRESTApp {
             if (pos.getPosizioni().size() != 0) {
                 returnMessage.setText("Ecco un elenco di posizioni che ho trovato per te:");
                 returnMessage.setOptions(pos.getPosizioni());
-            }
-            else
+            } else
                 returnMessage.setText("Al momento non ci sono posizioni aperte disponibili");
         }
         return returnMessage;
